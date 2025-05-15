@@ -52,8 +52,9 @@ public:
 
 protected:
     // command handler functions (virtual)
-    virtual types::power_supply_DC::Capabilities handle_getCapabilities() override;
-    virtual void handle_setMode(types::power_supply_DC::Mode& value) override;
+    //virtual types::power_supply_DC::Capabilities handle_getCapabilities() override;
+    virtual void handle_setMode(types::power_supply_DC::Mode& value,
+                                types::power_supply_DC::ChargingPhase& phase) override;
     virtual void handle_setExportVoltageCurrent(double& voltage, double& current) override;
     virtual void handle_setImportVoltageCurrent(double& voltage, double& current) override;
 
