@@ -75,6 +75,18 @@ void power_supply_DCImpl::init() {
 }
 
 void power_supply_DCImpl::ready() {
+    types::power_supply_DC::Capabilities caps;
+    
+    caps.bidirectional = true;
+    caps.max_export_current_A = config_current_limit;
+    caps.max_export_voltage_V = config_voltage_limit;
+    caps.min_export_current_A = config_min_current_limit;
+    caps.min_export_voltage_V = config_min_voltage_limit;
+    caps.max_export_power_W = config_power_limit;
+    caps.current_regulation_tolerance_A = 0.5;
+    caps.peak_current_ripple_A = 1;
+    caps.conversion_efficiency_export = 0.95;
+    publish_capabilities(caps);
     while (true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(250));
 
@@ -113,24 +125,9 @@ void power_supply_DCImpl::ready() {
     }
 }
 
-types::power_supply_DC::Capabilities power_supply_DCImpl::handle_getCapabilities() {
-    // your code for cmd getCapabilities goes here
-    types::power_supply_DC::Capabilities caps;
-    caps.bidirectional = false;
-    caps.max_export_current_A = config_current_limit;
-    caps.max_export_voltage_V = config_voltage_limit;
-    caps.min_export_current_A = config_min_current_limit;
-    caps.min_export_voltage_V = config_min_voltage_limit;
-    caps.max_export_power_W = config_power_limit;
-    caps.current_regulation_tolerance_A = 0.5;
-    caps.peak_current_ripple_A = 1;
-    caps.conversion_efficiency_export = 0.95;
 
-    return caps;
-}
-
-
-void power_supply_DCImpl::handle_setMode(types::power_supply_DC::Mode& value) {
+void power_supply_DCImpl::handle_setMode(types::power_supply_DC::Mode& value,
+                                        types::power_supply_DC::ChargingPhase& phase) {
 //    if (value == types::power_supply_DC::Mode::Export) {
 //        can_broker->set_state(true);
 //    } else {
@@ -148,7 +145,12 @@ void power_supply_DCImpl::handle_setExportVoltageCurrent(double& voltage, double
 }
 
 void power_supply_DCImpl::handle_setImportVoltageCurrent(double& voltage, double& current) {
-    // power supply is uni directional only
+    if (voltage <= config_voltage_limit && voltage >= config_min_voltage_limit && current <= config_current_limit && current >= config_min_current_limit) {
+        this->voltage = voltage;
+        this->current = current;
+    } else {
+        EVLOG_error << fmt::format("Out of range voltage/current settings ignored: {}V / {}A", voltage, current);
+    }
 }
 
 } // namespace main
